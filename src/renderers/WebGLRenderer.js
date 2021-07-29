@@ -55,16 +55,25 @@ function createCanvasElement() {
 
 function WebGLRenderer( parameters = {} ) {
 
+	// 一个供渲染器绘制其输出的canvas 它和下面的domElement属性对应。 如果没有传这个参数，会创建一个新canvas
 	const _canvas = parameters.canvas !== undefined ? parameters.canvas : createCanvasElement(),
+	// 可用于将渲染器附加到已有的渲染环境(RenderingContext)中。默认值是null
 		_context = parameters.context !== undefined ? parameters.context : null,
-
+		// canvas是否包含alpha (透明度)。默认为 false
 		_alpha = parameters.alpha !== undefined ? parameters.alpha : false,
+		// 绘图缓存是否有一个至少6位的深度缓存(depth buffer )。 默认是true.
 		_depth = parameters.depth !== undefined ? parameters.depth : true,
+		// 绘图缓存是否有一个至少8位的模板缓存(stencil buffer)。默认为true
 		_stencil = parameters.stencil !== undefined ? parameters.stencil : true,
+		// 是否执行抗锯齿。默认为false.
 		_antialias = parameters.antialias !== undefined ? parameters.antialias : false,
+		// renderer是否假设颜色有 premultiplied alpha. 默认为true
 		_premultipliedAlpha = parameters.premultipliedAlpha !== undefined ? parameters.premultipliedAlpha : true,
+		// 是否保留缓直到手动清除或被覆盖。 默认false.
 		_preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false,
+		// 提示用户代理怎样的配置更适用于当前WebGL环境。 可能是"high-performance", "low-power" 或 "default"。默认是"default". 详见WebGL spec
 		_powerPreference = parameters.powerPreference !== undefined ? parameters.powerPreference : 'default',
+		// whether the renderer creation will fail upon low perfomance is detected. Default is false. See WebGL spec for details.
 		_failIfMajorPerformanceCaveat = parameters.failIfMajorPerformanceCaveat !== undefined ? parameters.failIfMajorPerformanceCaveat : false;
 
 	let currentRenderList = null;
@@ -78,6 +87,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	// public properties
 
+	// 一个canvas，渲染器在其上绘制输出。
 	this.domElement = _canvas;
 
 	// Debug configuration container
@@ -85,6 +95,7 @@ function WebGLRenderer( parameters = {} ) {
 
 		/**
 		 * Enables error checking and reporting when shader programs are being compiled
+		 * 如果checkShaderErrors为true，定义是否检查材质着色器程序 编译和链接过程中的错误。 禁用此检查生产以获得性能增益可能很有用。 强烈建议在开发期间保持启用这些检查。 如果着色器没有编译和链接 - 它将无法工作，并且相关材料将不会呈现。 默认是true
 		 * @type {boolean}
 		 */
 		checkShaderErrors: true
@@ -92,32 +103,44 @@ function WebGLRenderer( parameters = {} ) {
 
 	// clearing
 
+	// 定义渲染器是否在渲染每一帧之前自动清除其输出。
 	this.autoClear = true;
+	// 如果autoClear为true, 定义renderer是否清除颜色缓存。 默认是true
 	this.autoClearColor = true;
+	// 如果autoClear是true, 定义renderer是否清除深度缓存。 默认是true
 	this.autoClearDepth = true;
+	// 如果autoClear是true, 定义renderer是否清除模板缓存. 默认是true
 	this.autoClearStencil = true;
 
 	// scene graph
 
+	// 定义渲染器是否应对对象进行排序。默认是true.
 	this.sortObjects = true;
 
 	// user-defined clipping
 
+	// 用户自定义的剪裁平面，在世界空间中被指定为THREE.Plane对象。 这些平面全局使用。空间中与该平面点积为负的点将被切掉。 默认值是[]
 	this.clippingPlanes = [];
+	// 定义渲染器是否考虑对象级剪切平面。 默认为false.
 	this.localClippingEnabled = false;
 
 	// physically based shading
 
+	// 默认是 2.
 	this.gammaFactor = 2.0;	// for backwards compatibility
+	// 定义渲染器的输出编码。默认为THREE.LinearEncoding
 	this.outputEncoding = LinearEncoding;
 
 	// physical lights
 
+	//是否使用物理上正确的光照模式。 默认是false。
 	this.physicallyCorrectLights = false;
 
 	// tone mapping
 
+	// 默认是NoToneMapping
 	this.toneMapping = NoToneMapping;
+	// 色调映射的曝光级别。默认是1
 	this.toneMappingExposure = 1.0;
 
 	// internal properties
@@ -220,9 +243,9 @@ function WebGLRenderer( parameters = {} ) {
 		_canvas.addEventListener( 'webglcontextrestored', onContextRestore, false );
 
 		if ( _gl === null ) {
-
+			// context优先级
 			const contextNames = [ 'webgl2', 'webgl', 'experimental-webgl' ];
-
+			// 使用webgl1
 			if ( _this.isWebGL1Renderer === true ) {
 
 				contextNames.shift();
@@ -331,12 +354,14 @@ function WebGLRenderer( parameters = {} ) {
 
 	// API
 
+	// 返回当前WebGL环境
 	this.getContext = function () {
 
 		return _gl;
 
 	};
 
+	// 返回一个对象，这个对象中存有在WebGL环境在创建的时候所设置的属性
 	this.getContextAttributes = function () {
 
 		return _gl.getContextAttributes();
@@ -357,12 +382,14 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 返回当前使用设备像素比
 	this.getPixelRatio = function () {
 
 		return _pixelRatio;
 
 	};
 
+	// 设置设备像素比。通常用于避免HiDPI设备上绘图模糊
 	this.setPixelRatio = function ( value ) {
 
 		if ( value === undefined ) return;
@@ -379,6 +406,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 将输出canvas的大小调整为(width, height)并考虑设备像素比，且将视口从(0, 0)开始调整到适合大小 将updateStyle设置为false以阻止对canvas的样式做任何改变。
 	this.setSize = function ( width, height, updateStyle ) {
 
 		if ( xr.isPresenting ) {
@@ -405,6 +433,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 返回一个包含渲染器绘图缓存宽度和高度(单位像素)的对象。
 	this.getDrawingBufferSize = function ( target ) {
 
 		return target.set( _width * _pixelRatio, _height * _pixelRatio ).floor();
@@ -425,6 +454,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 返回当前视口
 	this.getCurrentViewport = function ( target ) {
 
 		return target.copy( _currentViewport );
@@ -437,6 +467,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 将视口大小设置为(x, y)到 (x + width, y + height).
 	this.setViewport = function ( x, y, width, height ) {
 
 		if ( x.isVector4 ) {
@@ -525,6 +556,7 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 告诉渲染器清除颜色、深度或模板缓存. 此方法将颜色缓存初始化为当前颜色。参数们默认都是true
 	this.clear = function ( color, depth, stencil ) {
 
 		let bits = 0;
@@ -537,18 +569,21 @@ function WebGLRenderer( parameters = {} ) {
 
 	};
 
+	// 清除颜色缓存。 相当于调用.clear( true, false, false )
 	this.clearColor = function () {
 
 		this.clear( true, false, false );
 
 	};
 
+	// 清除深度缓存。相当于调用.clear( false, true, false )
 	this.clearDepth = function () {
 
 		this.clear( false, true, false );
 
 	};
 
+	// 清除模板缓存。相当于调用.clear( false, false, true )
 	this.clearStencil = function () {
 
 		this.clear( false, false, true );
